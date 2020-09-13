@@ -2,7 +2,7 @@ const { join, basename, dirname, extname } = require('path')
 const { readFile, writeFile, mkdir } = require('fs').promises
 const sharp = require('sharp')
 
-module.exports = ({ staticDir }) => {
+module.exports = ({ staticDir, sharpOptions }) => {
 	const conversions = new Map()
 
 	const convert = (convertable) => {
@@ -16,7 +16,7 @@ module.exports = ({ staticDir }) => {
 			}
 			return
 		}
-		const promise = convertImage(inputFilename, outputFilename, width)
+		const promise = convertImage(inputFilename, outputFilename, width, sharpOptions)
 		conversions.set(outputFilename, { input, width, promise })
 	}
 
@@ -26,7 +26,7 @@ module.exports = ({ staticDir }) => {
 	return { convert, done }
 }
 
-async function convertImage(source, target, width) {
+async function convertImage(source, target, width, sharpOptions) {
 	const sourceData = readFile(source)
 	await mkdir(dirname(target), { recursive: true })
 	let targetData = sourceData
@@ -35,7 +35,7 @@ async function convertImage(source, target, width) {
 	if (width || formatChanged) {
 		targetData = sharp(await sourceData)
 		if (width) targetData = targetData.resize({ width })
-		if (formatChanged) targetData = targetData.toFormat(targetFormat)
+		if (formatChanged) targetData = targetData.toFormat(targetFormat, sharpOptions)
 		targetData = targetData.toBuffer()
 	}
 	await writeFile(target, await targetData)
